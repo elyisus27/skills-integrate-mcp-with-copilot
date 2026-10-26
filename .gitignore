@@ -42,3 +42,4 @@ __pycache__
 # Env files
 .env
 src/teachers.json
+src/participation.json
