@@ -11,6 +11,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import time
 from pathlib import Path
@@ -28,6 +29,7 @@ except ImportError:
     import students
 
 MAX_IMPORT_BYTES = 1_000_000
+WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -215,6 +217,28 @@ def load_activities() -> dict:
                 raise RuntimeError(
                     f"Activity '{name}' in {path.name} has invalid 'points': {error}"
                 ) from error
+        if "category" in details and not (
+            isinstance(details["category"], str) and details["category"].strip()
+        ):
+            raise RuntimeError(
+                f"Activity '{name}' in {path.name} has an empty or invalid 'category'."
+            )
+        if "days" in details and not (
+            isinstance(details["days"], list)
+            and all(day in WEEKDAYS for day in details["days"])
+        ):
+            raise RuntimeError(
+                f"Activity '{name}' in {path.name} has invalid 'days'; "
+                f"use a list of: {', '.join(WEEKDAYS)}."
+            )
+        if "start_time" in details and not (
+            isinstance(details["start_time"], str)
+            and re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", details["start_time"])
+        ):
+            raise RuntimeError(
+                f"Activity '{name}' in {path.name} has an invalid 'start_time'; "
+                "use 24-hour HH:MM such as 15:30."
+            )
     return data
 
 
