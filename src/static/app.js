@@ -312,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       showMessage(result.message, "success");
-      await searchStudents(lastStudentQuery);
+      await searchStudents(lastStudentQuery, false);
     } catch (error) {
       showMessage("Unable to award points. Please try again.", "error");
       console.error("Error awarding points:", error);
@@ -321,11 +321,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let lastStudentQuery = "";
 
-  async function searchStudents(query) {
+  async function searchStudents(query, track = true) {
     lastStudentQuery = query;
     try {
       const response = await fetch(
-        `/students/search?q=${encodeURIComponent(query)}`
+        `/students/search?q=${encodeURIComponent(query)}&track=${track}`
       );
       const result = await response.json();
       if (!response.ok) {

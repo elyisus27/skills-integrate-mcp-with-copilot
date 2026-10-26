@@ -99,6 +99,25 @@ signed up for the activity or already have a record. Points are stored with the
 participation records and the totals are cumulative: each student profile shows
 points per activity and a `total_points` sum.
 
+## Search Analytics and Privacy
+
+To help organizers see how student search is used, each **submitted** search
+(not every keystroke, and not the automatic refresh after awarding points)
+records one event in `src/search_analytics.jsonl` (ignored by Git):
+
+| Field       | Example                 | Notes                                             |
+| ----------- | ----------------------- | ------------------------------------------------- |
+| `timestamp` | `2026-10-26T18:00:00+00:00` | UTC time of the search                        |
+| `type`      | `id` or `name`          | emails and IDs such as `S1004` count as `id`      |
+| `results`   | `3`                     | number of students that matched                   |
+
+The text that was searched, student names, emails and IDs are **never** stored.
+Events are kept for 90 days (`ANALYTICS_RETENTION_DAYS` to change it) and older
+ones are deleted whenever a new search is recorded. Teachers can read the
+aggregate totals (searches by type, searches with no results, searches per day)
+at `GET /analytics/searches`; guests get a 401. Override the file location with
+`ANALYTICS_FILE`.
+
 ## Student Lookup
 
 After logging in, teachers get a **Student Lookup** panel (or can call

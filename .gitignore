@@ -43,3 +43,4 @@ __pycache__
 .env
 src/teachers.json
 src/participation.json
+src/search_analytics.jsonl
