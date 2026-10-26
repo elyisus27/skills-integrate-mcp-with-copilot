@@ -206,6 +206,40 @@ button:hover {
   display: none;
 }
 
+#student-results {
+  margin-top: 15px;
+}
+
+.student-card {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fafafa;
+  overflow-wrap: anywhere;
+}
+
+.student-card h4 {
+  color: #1a237e;
+  margin-bottom: 6px;
+}
+
+.student-card ul {
+  margin: 8px 0 0 20px;
+}
+
+.no-results {
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.results-summary {
+  color: #666;
+  font-size: 14px;
+}
+
 dialog {
   width: min(420px, calc(100% - 32px));
   margin: auto;

@@ -3,6 +3,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const signupContainer = document.getElementById("signup-container");
+  const studentLookupContainer = document.getElementById(
+    "student-lookup-container"
+  );
+  const studentSearchForm = document.getElementById("student-search-form");
+  const studentQuery = document.getElementById("student-query");
+  const studentResults = document.getElementById("student-results");
   const messageDiv = document.getElementById("message");
   const accountButton = document.getElementById("account-button");
   const accountButtonLabel = document.getElementById("account-button-label");
@@ -91,6 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const session = await response.json();
     authenticated = session.authenticated;
     signupContainer.classList.toggle("hidden", !authenticated);
+    studentLookupContainer.classList.toggle("hidden", !authenticated);
+    if (!authenticated) {
+      studentResults.replaceChildren();
+      studentSearchForm.reset();
+    }
     accountStatus.textContent = authenticated
       ? `Signed in as ${session.username}`
       : "Viewing as a guest";
@@ -192,6 +203,89 @@ document.addEventListener("DOMContentLoaded", () => {
       loginError.textContent = "Unable to log in. Please try again.";
       loginError.classList.remove("hidden");
       console.error("Error logging in:", error);
+    }
+  });
+
+  function renderStudentResults(data) {
+    studentResults.replaceChildren();
+    if (data.results.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "no-results";
+      empty.textContent = `No students found for "${data.query}". Try a different name, email or student ID.`;
+      studentResults.appendChild(empty);
+      return;
+    }
+
+    const summary = document.createElement("p");
+    summary.className = "results-summary";
+    summary.textContent =
+      data.total > data.results.length
+        ? `Showing ${data.results.length} of ${data.total} students. Refine your search to narrow results.`
+        : `${data.total} student${data.total === 1 ? "" : "s"} found.`;
+    studentResults.appendChild(summary);
+
+    data.results.forEach((student) => {
+      const card = document.createElement("article");
+      card.className = "student-card";
+
+      const title = document.createElement("h4");
+      title.textContent = student.name;
+      card.appendChild(title);
+
+      const details = document.createElement("p");
+      details.textContent = [
+        student.email,
+        student.student_id ? `ID ${student.student_id}` : null,
+        student.grade ? `Grade ${student.grade}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      card.appendChild(details);
+
+      const count = document.createElement("p");
+      const countLabel = document.createElement("strong");
+      countLabel.textContent = "Activities: ";
+      count.append(countLabel, String(student.activities_count));
+      card.appendChild(count);
+
+      if (student.activities.length > 0) {
+        const list = document.createElement("ul");
+        student.activities.forEach((activity) => {
+          const item = document.createElement("li");
+          item.textContent =
+            activity.points === null
+              ? activity.name
+              : `${activity.name} (${activity.points} pts)`;
+          list.appendChild(item);
+        });
+        card.appendChild(list);
+      }
+      studentResults.appendChild(card);
+    });
+  }
+
+  studentSearchForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const query = studentQuery.value.trim();
+    if (!query) {
+      return;
+    }
+    try {
+      const response = await fetch(
+        `/students/search?q=${encodeURIComponent(query)}`
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        showMessage(result.detail || "Student search failed.", "error");
+        if (response.status === 401) {
+          await refreshAuthSession();
+        }
+        return;
+      }
+      renderStudentResults(result);
+    } catch (error) {
+      showMessage("Student search failed. Please try again.", "error");
+      console.error("Error searching students:", error);
     }
   });
 
