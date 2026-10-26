@@ -7,7 +7,31 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="branch-bg" aria-hidden="true">
+      <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" focusable="false">
+        <g class="branch-lines" fill="none" stroke-linecap="round">
+          <path class="branch b1" d="M-50 120 H260 C330 120 330 220 400 220 H760 C830 220 830 90 900 90 H1250" />
+          <path class="branch b2" d="M-50 420 H180 C250 420 250 330 320 330 H620 C690 330 690 520 760 520 H1250" />
+          <path class="branch b3" d="M-50 700 H420 C490 700 490 610 560 610 H980 C1050 610 1050 740 1120 740 H1250" />
+          <path class="branch b4" d="M300 -50 V140 C300 200 360 200 360 260 V850" />
+          <path class="branch b5" d="M900 -50 V250 C900 310 840 310 840 370 V850" />
+          <circle class="node n1" cx="260" cy="120" r="7" />
+          <circle class="node n2" cx="760" cy="220" r="7" />
+          <circle class="node n3" cx="620" cy="330" r="7" />
+          <circle class="node n4" cx="560" cy="610" r="7" />
+          <circle class="node n5" cx="900" cy="90" r="7" />
+        </g>
+      </svg>
+    </div>
+
     <header>
+      <img
+        class="mascot"
+        src="img/original.png"
+        alt="The Octocat, our school mascot"
+        width="96"
+        height="96"
+      />
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
       <div class="account-controls">
@@ -20,31 +44,6 @@
     </header>
 
     <main>
-      <section id="activities-container">
-        <h3>Available Activities</h3>
-        <div id="activities-list">
-          <!-- Activities will be loaded here -->
-          <p>Loading activities...</p>
-        </div>
-      </section>
-
-      <section id="signup-container" class="hidden">
-        <h3>Sign Up for an Activity</h3>
-        <form id="signup-form">
-          <div class="form-group">
-            <label for="email">Student Email:</label>
-            <input type="email" id="email" required placeholder="your-email@mergington.edu" />
-          </div>
-          <div class="form-group">
-            <label for="activity">Select Activity:</label>
-            <select id="activity" required>
-              <option value="">-- Select an activity --</option>
-              <!-- Activity options will be loaded here -->
-            </select>
-          </div>
-          <button type="submit">Sign Up</button>
-        </form>
-      </section>
       <section id="student-lookup-container" class="hidden">
         <h3>Student Lookup</h3>
         <form id="student-search-form" role="search">
@@ -62,8 +61,73 @@
         </form>
         <div id="student-results" aria-live="polite"></div>
       </section>
+
       <div id="message" class="hidden" role="status"></div>
+
+      <section id="activities-container">
+        <h3>Available Activities</h3>
+        <form id="activity-toolbar" class="toolbar" role="search" onsubmit="return false">
+          <div class="form-group toolbar-search">
+            <label for="activity-search">Search</label>
+            <input
+              type="search"
+              id="activity-search"
+              maxlength="100"
+              placeholder="Search activities..."
+            />
+          </div>
+          <div class="form-group">
+            <label for="category-filter">Category</label>
+            <select id="category-filter">
+              <option value="">All categories</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="day-filter">Day</label>
+            <select id="day-filter">
+              <option value="">Any day</option>
+              <option value="Mon">Monday</option>
+              <option value="Tue">Tuesday</option>
+              <option value="Wed">Wednesday</option>
+              <option value="Thu">Thursday</option>
+              <option value="Fri">Friday</option>
+              <option value="Sat">Saturday</option>
+              <option value="Sun">Sunday</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sort-select">Sort by</label>
+            <select id="sort-select">
+              <option value="name">Name (A–Z)</option>
+              <option value="time">Time</option>
+              <option value="spots">Most spots left</option>
+            </select>
+          </div>
+          <button type="button" id="reset-filters" class="secondary-button">Reset</button>
+        </form>
+        <p id="activity-count" class="results-summary" aria-live="polite"></p>
+        <div id="activities-list">
+          <!-- Activities will be loaded here -->
+          <p>Loading activities...</p>
+        </div>
+      </section>
     </main>
+
+    <dialog id="register-dialog">
+      <form id="signup-form">
+        <h3>Register student</h3>
+        <p>Activity: <strong id="register-activity-name"></strong></p>
+        <div class="form-group">
+          <label for="email">Student Email:</label>
+          <input type="email" id="email" required placeholder="student@mergington.edu" />
+        </div>
+        <div id="register-error" class="error hidden" role="alert"></div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-register" class="secondary-button">Cancel</button>
+          <button type="submit">Register</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="login-dialog">
       <form id="login-form">
@@ -92,6 +156,12 @@
 
     <footer>
       <p>&copy; 2026 Mergington High School</p>
+      <p class="credits">
+        Mascots from the
+        <a href="https://octodex.github.com/" target="_blank" rel="noopener">Octodex</a>
+        by GitHub, licensed
+        <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>.
+      </p>
     </footer>
 
     <script src="app.js"></script>

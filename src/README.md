@@ -68,6 +68,19 @@ A super simple FastAPI application that allows students to view and sign up for 
 | GET    | `/participation`                                                  | Imported participation grouped by student (teacher login required)  |
 | GET    | `/students/search?q=jose&limit=10`                                | Search students by email, ID or name (teacher login required)       |
 
+## Using the Website
+
+- **Activities** are shown as cards in a responsive grid. Above them, a toolbar
+  offers free-text search (name and description, accent-insensitive), a
+  category filter, a day filter and sorting by name, time or most spots left.
+- **Register student** (teachers only) is a button on each activity card that
+  opens a small form for the student's email. Teachers can also unregister
+  students from the card.
+- **Look and feel** uses the school colors (white and lime green), Octocat
+  mascots from the [Octodex](https://octodex.github.com/) (CC BY 3.0) in
+  `static/img/`, and slowly animated Git-branch lines in the background. The
+  animation stops for visitors who prefer reduced motion.
+
 ## Editing Activities
 
 Activities live in [`activities.json`](./activities.json), so you can change them
@@ -81,6 +94,12 @@ without touching any Python. Each activity is keyed by its name and needs:
   "participants": ["michael@mergington.edu"]
 }
 ```
+
+Optional fields power the filters and sorting on the page: `"category"` (any
+text, e.g. `"Sports"`), `"days"` (a list of `Mon`…`Sun`), `"start_time"` (24-hour
+`HH:MM`, e.g. `"15:30"`) and `"points"` (see Activity Points). The textual
+`schedule` is still what people read; `days` and `start_time` only drive the
+Day filter and the "Time" sort.
 
 Tips: keep a comma between activities (but not after the last one), use double
 quotes, and restart the server after editing. If the file has a mistake the
@@ -98,6 +117,25 @@ with it, that value is recorded instead (use `0` to clear). The student must be
 signed up for the activity or already have a record. Points are stored with the
 participation records and the totals are cumulative: each student profile shows
 points per activity and a `total_points` sum.
+
+## Search Analytics and Privacy
+
+To help organizers see how student search is used, each **submitted** search
+(not every keystroke, and not the automatic refresh after awarding points)
+records one event in `src/search_analytics.jsonl` (ignored by Git):
+
+| Field       | Example                 | Notes                                             |
+| ----------- | ----------------------- | ------------------------------------------------- |
+| `timestamp` | `2026-10-26T18:00:00+00:00` | UTC time of the search                        |
+| `type`      | `id` or `name`          | emails and IDs such as `S1004` count as `id`      |
+| `results`   | `3`                     | number of students that matched                   |
+
+The text that was searched, student names, emails and IDs are **never** stored.
+Events are kept for 90 days (`ANALYTICS_RETENTION_DAYS` to change it) and older
+ones are deleted whenever a new search is recorded. Teachers can read the
+aggregate totals (searches by type, searches with no results, searches per day)
+at `GET /analytics/searches`; guests get a 401. Override the file location with
+`ANALYTICS_FILE`.
 
 ## Student Lookup
 

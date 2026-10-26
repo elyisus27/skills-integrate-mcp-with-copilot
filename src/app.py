@@ -11,6 +11,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import time
 from pathlib import Path
@@ -21,12 +22,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 try:
-    from . import participation, students
+    from . import analytics, participation, students
 except ImportError:
+    import analytics
     import participation
     import students
 
 MAX_IMPORT_BYTES = 1_000_000
+WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -214,6 +217,28 @@ def load_activities() -> dict:
                 raise RuntimeError(
                     f"Activity '{name}' in {path.name} has invalid 'points': {error}"
                 ) from error
+        if "category" in details and not (
+            isinstance(details["category"], str) and details["category"].strip()
+        ):
+            raise RuntimeError(
+                f"Activity '{name}' in {path.name} has an empty or invalid 'category'."
+            )
+        if "days" in details and not (
+            isinstance(details["days"], list)
+            and all(day in WEEKDAYS for day in details["days"])
+        ):
+            raise RuntimeError(
+                f"Activity '{name}' in {path.name} has invalid 'days'; "
+                f"use a list of: {', '.join(WEEKDAYS)}."
+            )
+        if "start_time" in details and not (
+            isinstance(details["start_time"], str)
+            and re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", details["start_time"])
+        ):
+            raise RuntimeError(
+                f"Activity '{name}' in {path.name} has an invalid 'start_time'; "
+                "use 24-hour HH:MM such as 15:30."
+            )
     return data
 
 
@@ -296,8 +321,16 @@ def get_participation(request: Request):
 
 
 @app.get("/students/search")
-def search_students(request: Request, q: str = "", limit: int = students.MAX_RESULTS):
-    """Search students by email, ID or name and show their activity history"""
+def search_students(
+    request: Request,
+    q: str = "",
+    limit: int = students.MAX_RESULTS,
+    track: bool = True,
+):
+    """Search students by email, ID or name and show their activity history.
+
+    Pass track=false for refreshes that are not a newly submitted search so
+    the analytics count each submitted search only once."""
     require_teacher(request)
     if len(q) > 100:
         raise HTTPException(status_code=400, detail="Search text is too long.")
@@ -305,7 +338,20 @@ def search_students(request: Request, q: str = "", limit: int = students.MAX_RES
         imported = participation.load_records()
     except participation.ImportFormatError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
-    return students.search(q, activities, imported, limit)
+    result = students.search(q, activities, imported, limit)
+    if track and q.strip():
+        try:
+            analytics.record_search(q, result["total"])
+        except OSError:
+            logger.exception("Unable to record search analytics")
+    return result
+
+
+@app.get("/analytics/searches")
+def get_search_analytics(request: Request):
+    """Aggregate student search usage (teacher login required)"""
+    require_teacher(request)
+    return analytics.summarize()
 
 
 @app.post("/activities/{activity_name}/points")
