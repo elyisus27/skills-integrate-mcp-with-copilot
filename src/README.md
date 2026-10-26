@@ -68,6 +68,25 @@ A super simple FastAPI application that allows students to view and sign up for 
 | GET    | `/participation`                                                  | Imported participation grouped by student (teacher login required)  |
 | GET    | `/students/search?q=jose&limit=10`                                | Search students by email, ID or name (teacher login required)       |
 
+## Editing Activities
+
+Activities live in [`activities.json`](./activities.json), so you can change them
+without touching any Python. Each activity is keyed by its name and needs:
+
+```json
+"Chess Club": {
+  "description": "Learn strategies and compete in chess tournaments",
+  "schedule": "Fridays, 3:30 PM - 5:00 PM",
+  "max_participants": 12,
+  "participants": ["michael@mergington.edu"]
+}
+```
+
+Tips: keep a comma between activities (but not after the last one), use double
+quotes, and restart the server after editing. If the file has a mistake the
+server refuses to start and prints what to fix (including the line number for
+JSON syntax errors). Set `ACTIVITIES_FILE` to use a different file.
+
 ## Student Lookup
 
 After logging in, teachers get a **Student Lookup** panel (or can call
