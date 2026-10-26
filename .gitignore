@@ -26,7 +26,17 @@
 *.sql
 *.sqlite
 
-# OS generated files
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python files
 __pycache__
 
 # Env files
