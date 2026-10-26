@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <p><strong>Points:</strong> ${Number(details.points) || 0}</p>
           <div class="participants-container">
             ${participantsHTML}
           </div>
@@ -245,17 +246,45 @@ document.addEventListener("DOMContentLoaded", () => {
       const count = document.createElement("p");
       const countLabel = document.createElement("strong");
       countLabel.textContent = "Activities: ";
-      count.append(countLabel, String(student.activities_count));
+      count.append(
+        countLabel,
+        `${student.activities_count} · Total points: ${student.total_points}`
+      );
       card.appendChild(count);
 
       if (student.activities.length > 0) {
         const list = document.createElement("ul");
+        list.className = "student-activities";
         student.activities.forEach((activity) => {
           const item = document.createElement("li");
-          item.textContent =
+          const label = document.createElement("span");
+          label.textContent =
             activity.points === null
-              ? activity.name
+              ? `${activity.name} (no points yet)`
               : `${activity.name} (${activity.points} pts)`;
+          item.appendChild(label);
+
+          const pointsInput = document.createElement("input");
+          pointsInput.type = "number";
+          pointsInput.min = "0";
+          pointsInput.max = "10000";
+          pointsInput.step = "1";
+          pointsInput.value = activity.points ?? "";
+          pointsInput.placeholder = "pts";
+          pointsInput.setAttribute("aria-label", `Points for ${activity.name}`);
+
+          const saveButton = document.createElement("button");
+          saveButton.type = "button";
+          saveButton.className = "award-btn";
+          saveButton.textContent = "Award";
+          saveButton.addEventListener("click", () =>
+            awardPoints(student.email, activity.name, pointsInput.value)
+          );
+
+          const controls = document.createElement("span");
+          controls.className = "points-controls";
+          controls.append(pointsInput, saveButton);
+          item.appendChild(controls);
           list.appendChild(item);
         });
         card.appendChild(list);
@@ -264,12 +293,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  studentSearchForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const query = studentQuery.value.trim();
-    if (!query) {
-      return;
+  async function awardPoints(email, activity, points) {
+    const params = new URLSearchParams({ email });
+    if (points !== "") {
+      params.set("points", points);
     }
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activity)}/points?${params}`,
+        { method: "POST" }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        const detail = Array.isArray(result.detail)
+          ? "Points must be a whole number."
+          : result.detail;
+        showMessage(detail || "Unable to award points.", "error");
+        return;
+      }
+      showMessage(result.message, "success");
+      await searchStudents(lastStudentQuery);
+    } catch (error) {
+      showMessage("Unable to award points. Please try again.", "error");
+      console.error("Error awarding points:", error);
+    }
+  }
+
+  let lastStudentQuery = "";
+
+  async function searchStudents(query) {
+    lastStudentQuery = query;
     try {
       const response = await fetch(
         `/students/search?q=${encodeURIComponent(query)}`
@@ -286,6 +339,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       showMessage("Student search failed. Please try again.", "error");
       console.error("Error searching students:", error);
+    }
+  }
+
+  studentSearchForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const query = studentQuery.value.trim();
+    if (query) {
+      await searchStudents(query);
     }
   });
 

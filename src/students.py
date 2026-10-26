@@ -110,6 +110,7 @@ def search(
                 "student_id": student["student_id"],
                 "grade": student["grade"],
                 "activities_count": len(history),
+                "total_points": sum(item["points"] or 0 for item in history),
                 "activities": history,
             }
         )
