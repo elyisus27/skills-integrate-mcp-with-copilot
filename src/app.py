@@ -20,6 +20,13 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+try:
+    from . import participation
+except ImportError:
+    import participation
+
+MAX_IMPORT_BYTES = 1_000_000
+
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
 
@@ -264,6 +271,35 @@ def logout(response: Response):
         key=SESSION_COOKIE, httponly=True, samesite="strict", path="/"
     )
     return {"message": "Signed out."}
+
+
+@app.post("/participation/import")
+async def import_participation(request: Request, format: str = "csv"):
+    """Import historical participation records from a CSV or JSON body"""
+    require_teacher(request)
+
+    body = await request.body()
+    if len(body) > MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail="Import file is too large.")
+    try:
+        content = body.decode("utf-8-sig")
+        return participation.import_records(content, format.lower(), set(activities))
+    except UnicodeDecodeError as error:
+        raise HTTPException(
+            status_code=400, detail="Import file must be UTF-8 text."
+        ) from error
+    except participation.ImportFormatError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/participation")
+def get_participation(request: Request):
+    """Get imported participation grouped by student"""
+    require_teacher(request)
+    try:
+        return participation.summarize()
+    except participation.ImportFormatError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @app.post("/activities/{activity_name}/signup")
