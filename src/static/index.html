@@ -45,6 +45,23 @@
           <button type="submit">Sign Up</button>
         </form>
       </section>
+      <section id="student-lookup-container" class="hidden">
+        <h3>Student Lookup</h3>
+        <form id="student-search-form" role="search">
+          <div class="form-group">
+            <label for="student-query">Email, student ID or name:</label>
+            <input
+              type="search"
+              id="student-query"
+              maxlength="100"
+              required
+              placeholder="e.g. jose, S1004 or sophia@..."
+            />
+          </div>
+          <button type="submit">Search</button>
+        </form>
+        <div id="student-results" aria-live="polite"></div>
+      </section>
       <div id="message" class="hidden" role="status"></div>
     </main>
 

@@ -21,9 +21,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 try:
-    from . import participation
+    from . import participation, students
 except ImportError:
     import participation
+    import students
 
 MAX_IMPORT_BYTES = 1_000_000
 
@@ -306,6 +307,19 @@ def get_participation(request: Request):
         return participation.summarize()
     except participation.ImportFormatError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.get("/students/search")
+def search_students(request: Request, q: str = "", limit: int = students.MAX_RESULTS):
+    """Search students by email, ID or name and show their activity history"""
+    require_teacher(request)
+    if len(q) > 100:
+        raise HTTPException(status_code=400, detail="Search text is too long.")
+    try:
+        imported = participation.load_records()
+    except participation.ImportFormatError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    return students.search(q, activities, imported, limit)
 
 
 @app.post("/activities/{activity_name}/signup")

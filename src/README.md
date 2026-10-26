@@ -8,6 +8,7 @@ A super simple FastAPI application that allows students to view and sign up for 
 - Teacher login for signing up and unregistering students
 - Publicly view registered participants
 - Import historical participation records (teachers only)
+- Student lookup with activity history (teachers only)
 
 ## Getting Started
 
@@ -65,6 +66,22 @@ A super simple FastAPI application that allows students to view and sign up for 
 | DELETE | `/activities/{activity_name}/unregister?email=student@mergington.edu` | Unregister a student (teacher login required)                   |
 | POST   | `/participation/import?format=csv\|json`                          | Import historical participation records (teacher login required)    |
 | GET    | `/participation`                                                  | Imported participation grouped by student (teacher login required)  |
+| GET    | `/students/search?q=jose&limit=10`                                | Search students by email, ID or name (teacher login required)       |
+
+## Student Lookup
+
+After logging in, teachers get a **Student Lookup** panel (or can call
+`GET /students/search?q=<text>`). The search matches email, student ID or name:
+
+- Name matching is case-insensitive and ignores accents (`jose` finds `José`).
+- Partial matches work, and at most 10 students are returned; `total` reports
+  how many matched.
+- Each result has the name, email, student ID, grade, activity count and the
+  list of activities (with points when imported records exist).
+- Students come from the sample directory in `src/students.py`, activity
+  sign-ups and imported participation records. Students without a directory
+  entry get a name derived from their email.
+- No matches shows a "no students found" message.
 
 ## Importing Historical Participation
 
