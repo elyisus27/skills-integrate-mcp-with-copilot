@@ -170,69 +170,48 @@ current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
 
-# In-memory activity database
-activities = {
-    "Chess Club": {
-        "description": "Learn strategies and compete in chess tournaments",
-        "schedule": "Fridays, 3:30 PM - 5:00 PM",
-        "max_participants": 12,
-        "participants": ["michael@mergington.edu", "daniel@mergington.edu"]
-    },
-    "Programming Class": {
-        "description": "Learn programming fundamentals and build software projects",
-        "schedule": "Tuesdays and Thursdays, 3:30 PM - 4:30 PM",
-        "max_participants": 20,
-        "participants": ["emma@mergington.edu", "sophia@mergington.edu"]
-    },
-    "Gym Class": {
-        "description": "Physical education and sports activities",
-        "schedule": "Mondays, Wednesdays, Fridays, 2:00 PM - 3:00 PM",
-        "max_participants": 30,
-        "participants": ["john@mergington.edu", "olivia@mergington.edu"]
-    },
-    "Soccer Team": {
-        "description": "Join the school soccer team and compete in matches",
-        "schedule": "Tuesdays and Thursdays, 4:00 PM - 5:30 PM",
-        "max_participants": 22,
-        "participants": ["liam@mergington.edu", "noah@mergington.edu"]
-    },
-    "Basketball Team": {
-        "description": "Practice and play basketball with the school team",
-        "schedule": "Wednesdays and Fridays, 3:30 PM - 5:00 PM",
-        "max_participants": 15,
-        "participants": ["ava@mergington.edu", "mia@mergington.edu"]
-    },
-    "Art Club": {
-        "description": "Explore your creativity through painting and drawing",
-        "schedule": "Thursdays, 3:30 PM - 5:00 PM",
-        "max_participants": 15,
-        "participants": ["amelia@mergington.edu", "harper@mergington.edu"]
-    },
-    "Drama Club": {
-        "description": "Act, direct, and produce plays and performances",
-        "schedule": "Mondays and Wednesdays, 4:00 PM - 5:30 PM",
-        "max_participants": 20,
-        "participants": ["ella@mergington.edu", "scarlett@mergington.edu"]
-    },
-    "Math Club": {
-        "description": "Solve challenging problems and participate in math competitions",
-        "schedule": "Tuesdays, 3:30 PM - 4:30 PM",
-        "max_participants": 10,
-        "participants": ["james@mergington.edu", "benjamin@mergington.edu"]
-    },
-    "Debate Team": {
-        "description": "Develop public speaking and argumentation skills",
-        "schedule": "Fridays, 4:00 PM - 5:30 PM",
-        "max_participants": 12,
-        "participants": ["charlotte@mergington.edu", "henry@mergington.edu"]
-    },
-    "GitHub Skills": {
-        "description": "Learn practical coding and collaboration skills with GitHub as part of the GitHub Certifications program",
-        "schedule": "Thursdays, 3:30 PM - 5:00 PM",
-        "max_participants": 20,
-        "participants": []
-    }
+REQUIRED_ACTIVITY_FIELDS = {
+    "description": str,
+    "schedule": str,
+    "max_participants": int,
+    "participants": list,
 }
+
+
+def load_activities() -> dict:
+    """Load activities from activities.json, failing with a clear message
+    so teachers know exactly what to fix after editing the file."""
+    path = Path(
+        os.environ.get("ACTIVITIES_FILE", str(current_dir / "activities.json"))
+    )
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise RuntimeError(f"Activities file not found: {path}") from error
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"{path.name} is not valid JSON (line {error.lineno}, "
+            f"column {error.colno}): {error.msg}. Check for a missing or "
+            "extra comma or quote."
+        ) from error
+
+    if not isinstance(data, dict) or not data:
+        raise RuntimeError(f"{path.name} must contain an object of activities.")
+    for name, details in data.items():
+        if not isinstance(details, dict):
+            raise RuntimeError(f"Activity '{name}' in {path.name} must be an object.")
+        for field, expected_type in REQUIRED_ACTIVITY_FIELDS.items():
+            value = details.get(field)
+            if not isinstance(value, expected_type) or isinstance(value, bool):
+                raise RuntimeError(
+                    f"Activity '{name}' in {path.name} needs a "
+                    f"'{field}' of type {expected_type.__name__}."
+                )
+    return data
+
+
+# In-memory activity database, loaded from activities.json at startup
+activities = load_activities()
 
 
 @app.get("/")
