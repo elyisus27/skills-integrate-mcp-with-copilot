@@ -87,6 +87,18 @@ quotes, and restart the server after editing. If the file has a mistake the
 server refuses to start and prints what to fix (including the line number for
 JSON syntax errors). Set `ACTIVITIES_FILE` to use a different file.
 
+## Activity Points
+
+Each activity can define a default `"points"` value in `activities.json` (a whole
+number from 0 to 10000; defaults to 0). Teachers award points per student and
+activity from the Student Lookup panel, or with
+`POST /activities/{activity_name}/points?email=<email>[&points=<n>]`
+(teacher login required). Without `points` the activity's default is awarded;
+with it, that value is recorded instead (use `0` to clear). The student must be
+signed up for the activity or already have a record. Points are stored with the
+participation records and the totals are cumulative: each student profile shows
+points per activity and a `total_points` sum.
+
 ## Student Lookup
 
 After logging in, teachers get a **Student Lookup** panel (or can call

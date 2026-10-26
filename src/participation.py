@@ -110,13 +110,34 @@ def validate_row(raw_row: object, activity_names: set[str]):
     points = 0
     if raw_points not in (None, ""):
         try:
-            points = int(str(raw_points).strip())
-        except ValueError:
-            return None, f"Points must be a whole number, got: {raw_points}."
-        if not 0 <= points <= MAX_POINTS:
-            return None, f"Points must be between 0 and {MAX_POINTS}."
+            points = validate_points(raw_points)
+        except ValueError as error:
+            return None, str(error)
 
     return (email, activity, points), None
+
+
+def validate_points(raw_points) -> int:
+    """Return points as an int in range or raise ValueError."""
+    if isinstance(raw_points, bool):
+        raise ValueError("Points must be a whole number.")
+    try:
+        points = int(str(raw_points).strip())
+    except ValueError as error:
+        raise ValueError(f"Points must be a whole number, got: {raw_points}.") from error
+    if not 0 <= points <= MAX_POINTS:
+        raise ValueError(f"Points must be between 0 and {MAX_POINTS}.")
+    return points
+
+
+def award_points(email: str, activity: str, points: int) -> int:
+    """Set the points a student earned in an activity; returns the new total."""
+    email = email.strip().lower()
+    with _lock:
+        records = load_records()
+        records.setdefault(email, {})[activity] = points
+        _save_records(records)
+        return sum(records[email].values())
 
 
 def import_records(content: str, file_format: str, activity_names: set[str]) -> dict:

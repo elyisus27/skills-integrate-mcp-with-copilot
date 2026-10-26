@@ -207,6 +207,13 @@ def load_activities() -> dict:
                     f"Activity '{name}' in {path.name} needs a "
                     f"'{field}' of type {expected_type.__name__}."
                 )
+        if "points" in details:
+            try:
+                participation.validate_points(details["points"])
+            except ValueError as error:
+                raise RuntimeError(
+                    f"Activity '{name}' in {path.name} has invalid 'points': {error}"
+                ) from error
     return data
 
 
@@ -299,6 +306,43 @@ def search_students(request: Request, q: str = "", limit: int = students.MAX_RES
     except participation.ImportFormatError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     return students.search(q, activities, imported, limit)
+
+
+@app.post("/activities/{activity_name}/points")
+def award_activity_points(
+    activity_name: str, email: str, request: Request, points: int | None = None
+):
+    """Award points to a student; defaults to the activity's points value"""
+    require_teacher(request)
+
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    activity = activities[activity_name]
+    email = email.strip().lower()
+
+    try:
+        records = participation.load_records()
+    except participation.ImportFormatError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    is_participant = email in {p.strip().lower() for p in activity["participants"]}
+    if not is_participant and activity_name not in records.get(email, {}):
+        raise HTTPException(
+            status_code=400,
+            detail="Student is not signed up for this activity",
+        )
+
+    try:
+        awarded = participation.validate_points(
+            activity.get("points", 0) if points is None else points
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    total = participation.award_points(email, activity_name, awarded)
+    return {
+        "message": f"Awarded {awarded} points to {email} for {activity_name}",
+        "points": awarded,
+        "total_points": total,
+    }
 
 
 @app.post("/activities/{activity_name}/signup")

@@ -228,6 +228,30 @@ button:hover {
   margin: 8px 0 0 20px;
 }
 
+.student-activities li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.points-controls {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.points-controls input {
+  width: 80px;
+  padding: 4px 6px;
+}
+
+.award-btn {
+  padding: 4px 10px;
+  font-size: 14px;
+}
+
 .no-results {
   padding: 10px;
   border-radius: 4px;
